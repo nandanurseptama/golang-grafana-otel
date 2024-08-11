@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option go_package = "github.com/nandanurseptama/services/user";
+
+package user;
+
+// User service definition
+service UserService{
+    // create new user
+    rpc CreateUser(CreateUserRequest) returns(User);
+    // get user by email
+    rpc GetUser(GetUserRequest) returns(User);
+}
+
+message CreateUserRequest{
+    string email = 1;
+    string password = 3;
+}
+message GetUserRequest{
+    string email = 1;
+}
+
+message User{
+    int64 id = 1;
+    string email = 2;
+    string password = 4;
+}
