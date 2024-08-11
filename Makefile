@@ -5,6 +5,3 @@ gen-services-proto:
 	protoc --go_out=. --go_opt=paths=source_relative \
     --go-grpc_out=. --go-grpc_opt=paths=source_relative \
     services/auth/*.proto
-
-build-services:
-	docker build -t nandanurseptama/golang-grafana-otel/user-service services/user/

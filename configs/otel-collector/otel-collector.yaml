@@ -1,0 +1,54 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  prometheus/collector:
+    config:
+      scrape_configs:
+        - job_name: "opentelemetry-collector"
+          static_configs:
+            - targets: ["localhost:8888"]
+
+processors:
+  batch:
+
+exporters:
+  otlphttp/metrics:
+    endpoint: http://prometheus:9090/api/v1/otlp
+    tls:
+      insecure: true
+  otlphttp:
+    endpoint: http://tempo:4418
+    tls:
+      insecure: true
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+    tls:
+      insecure: true
+  logging/metrics:
+    verbosity: detailed
+  logging/traces:
+    verbosity: detailed
+  logging/logs:
+    verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp]
+      #exporters: [otlphttp/traces,logging/traces]
+    metrics:
+      receivers: [otlp, prometheus/collector]
+      processors: [batch]
+      exporters: [otlphttp/metrics]
+      #exporters: [otlphttp/metrics,logging/metrics]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [loki]
+      #exporters: [otlphttp/logs,logging/logs]

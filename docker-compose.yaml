@@ -1,0 +1,100 @@
+services:
+  user-service:
+    image: nandanurseptama/golang-grafana-otel/user-service
+    restart: always
+    build:
+      context: app
+    ports:
+      - 8080:8080 # expose user service port
+    environment:
+      PORT: "8080"
+      DB_PATH: /app/sqlite.db
+      OTEL_RESOURCE_ATTRIBUTES: "service.name=user,service.version=0.1.0"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_TRACES_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_METRICS_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_LOGS_PROTOCOL: grpc
+    volumes:
+      - ./volumes/services/user/sqlite.db:/app/sqlite.db
+  auth-service:
+    image: nandanurseptama/golang-grafana-otel/auth-service
+    restart: always
+    build:
+      context: app
+    ports:
+      - 8081:8081 # expose user service port
+    environment:
+      PORT: "8081"
+      JWT_SECRET: "B613679A0814D9EC772F95D778C35FC5FF1697C493715653C6C712144292C5AD"
+      OTEL_RESOURCE_ATTRIBUTES: "service.name=auth,service.version=0.1.0"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_TRACES_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_METRICS_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_LOGS_PROTOCOL: grpc
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./configs/otel-collector/otel-collector.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - 1888:1888 # pprof extension
+      - 8888:8888 # Prometheus metrics exposed by the collector
+      - 8889:8889 # Prometheus exporter metrics
+      - 13133:13133 # health_check extension
+      - 4317:4317 # OTLP gRPC receiver
+      - 55679:55679 # zpages extension
+      - 4318:4318
+  prometheus:
+    image: prom/prometheus
+    command:
+      [
+        "--web.enable-remote-write-receiver",
+        "--enable-feature=otlp-write-receiver",
+        "--enable-feature=exemplar-storage",
+        "--enable-feature=native-histograms",
+        "--config.file=/etc/prometheus/prometheus.yml",
+      ]
+    restart: always
+    ports:
+      - 9090:9090 # expose prometheus service port
+    volumes:
+      - ./volumes/prometheus:/prometheus # mounting prometheus directory data to container directory
+      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+  loki:
+    image: grafana/loki
+    ports:
+      - 3100:3100
+    volumes:
+      - ./volumes/loki:/loki
+      - ./configs/loki/loki.yml:/etc/loki/loki.yml
+    command: ["-config.file=/etc/loki/loki.yml"]
+  tempo:
+    image: grafana/tempo
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ./configs/tempo/tempo.yml:/etc/tempo/tempo.yml
+      - ./volumes/tempo:/var/tempo
+    ports:
+      - "14268:14268" # jaeger ingest
+      - "3200:3200" # tempo
+      - "9095:9095" # tempo grpc
+      - "4417:4417" # otlp grpc
+      - "4418:4418" # otlp http
+      - "9411:9411" # zipkin
+  grafana:
+    image: grafana/grafana
+    restart: always
+    ports:
+      - 3000:3000 # expose grafana port
+    volumes:
+      - ./configs/grafana/provisioning:/etc/grafana/provisioning
+      - ./dashboards:/usr/lib/dashboards
+      - ./volumes/grafana:/var/lib/grafana

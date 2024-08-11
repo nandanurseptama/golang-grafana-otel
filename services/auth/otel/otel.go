@@ -3,12 +3,14 @@ package otel
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
+	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
-	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
-	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/log"
@@ -16,9 +18,13 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
+var Tracer = otel.Tracer("github.com/nandanurseptama/golang-grafana-otel/auth")
+var Meter = otel.Meter("github.com/nandanurseptama/golang-grafana-otel/auth")
+
 // setupOTelSDK bootstraps the OpenTelemetry pipeline.
 // If it does not return an error, make sure to call shutdown for proper cleanup.
 func SetupSDK(ctx context.Context) (shutdown func(context.Context) error, err error) {
+	slog.SetDefault(otelslog.NewLogger("github.com/nandanurseptama/golang-grafana-otel/auth"))
 	var shutdownFuncs []func(context.Context) error
 
 	// shutdown calls cleanup functions registered via shutdownFuncs.
@@ -43,7 +49,7 @@ func SetupSDK(ctx context.Context) (shutdown func(context.Context) error, err er
 	otel.SetTextMapPropagator(prop)
 
 	// Set up trace provider.
-	tracerProvider, err := newTraceProvider()
+	tracerProvider, err := newTraceProvider(ctx)
 	if err != nil {
 		handleErr(err)
 		return
@@ -52,7 +58,7 @@ func SetupSDK(ctx context.Context) (shutdown func(context.Context) error, err er
 	otel.SetTracerProvider(tracerProvider)
 
 	// Set up meter provider.
-	meterProvider, err := newMeterProvider()
+	meterProvider, err := newMeterProvider(ctx)
 	if err != nil {
 		handleErr(err)
 		return
@@ -61,7 +67,7 @@ func SetupSDK(ctx context.Context) (shutdown func(context.Context) error, err er
 	otel.SetMeterProvider(meterProvider)
 
 	// Set up logger provider.
-	loggerProvider, err := newLoggerProvider()
+	loggerProvider, err := newLoggerProvider(ctx)
 	if err != nil {
 		handleErr(err)
 		return
@@ -79,9 +85,11 @@ func newPropagator() propagation.TextMapPropagator {
 	)
 }
 
-func newTraceProvider() (*trace.TracerProvider, error) {
-	traceExporter, err := stdouttrace.New(
-		stdouttrace.WithPrettyPrint())
+func newTraceProvider(ctx context.Context) (*trace.TracerProvider, error) {
+	traceExporter, err := otlptracegrpc.New(
+		ctx,
+		otlptracegrpc.WithInsecure(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -94,8 +102,11 @@ func newTraceProvider() (*trace.TracerProvider, error) {
 	return traceProvider, nil
 }
 
-func newMeterProvider() (*metric.MeterProvider, error) {
-	metricExporter, err := stdoutmetric.New()
+func newMeterProvider(ctx context.Context) (*metric.MeterProvider, error) {
+	metricExporter, err := otlpmetricgrpc.New(
+		ctx,
+		otlpmetricgrpc.WithInsecure(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -108,8 +119,10 @@ func newMeterProvider() (*metric.MeterProvider, error) {
 	return meterProvider, nil
 }
 
-func newLoggerProvider() (*log.LoggerProvider, error) {
-	logExporter, err := stdoutlog.New()
+func newLoggerProvider(ctx context.Context) (*log.LoggerProvider, error) {
+	logExporter, err := otlploggrpc.New(ctx,
+		otlploggrpc.WithInsecure(),
+	)
 	if err != nil {
 		return nil, err
 	}
