@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option go_package = "github.com/nandanurseptama/services/auth";
+
+// relative to workspace
+import "services/user/user_service.proto";
+
+package auth;
+
+// User service definition
+service AuthService{
+    // create new user
+    rpc Login(LoginRequest) returns(LoginResponse);
+    rpc Me(MeRequest) returns(user.User);
+}
+
+message LoginRequest{
+    string email = 1;
+    string password = 3;
+}
+
+message LoginResponse{
+    string token = 1;
+}
+message MeRequest{
+    string token = 1;
+}

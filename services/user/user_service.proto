@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/nandanurseptama/services/user";
+option go_package = "github.com/nandanurseptama/golang-grafana-otel/services/user";
 
 package user;
 
