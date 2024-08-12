@@ -5,27 +5,21 @@ receivers:
         endpoint: 0.0.0.0:4317
       http:
         endpoint: 0.0.0.0:4318
-  prometheus/collector:
-    config:
-      scrape_configs:
-        - job_name: "opentelemetry-collector"
-          static_configs:
-            - targets: ["localhost:8888"]
 
 processors:
   batch:
 
 exporters:
   otlphttp/metrics:
-    endpoint: http://prometheus:9090/api/v1/otlp
+    endpoint: http://prometheus:9090/api/v1/otlp # Sending metrics to prometheus
     tls:
       insecure: true
   otlphttp:
-    endpoint: http://tempo:4418
+    endpoint: http://tempo:4418 # sending data to tempo
     tls:
       insecure: true
   loki:
-    endpoint: http://loki:3100/loki/api/v1/push
+    endpoint: http://loki:3100/loki/api/v1/push # sending data to loki
     tls:
       insecure: true
   logging/metrics:
