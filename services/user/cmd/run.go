@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"os"
 	"os/signal"
@@ -26,17 +26,18 @@ func run() (err error) {
 	if err != nil {
 		return
 	}
+	slog.InfoContext(ctx, "setup otelSDK success")
 	// Handle shutdown properly so nothing leaks.
 	defer func() {
 		err = errors.Join(err, otelShutdown(context.Background()))
 	}()
 
-	env, err := bootstrap.GetEnv()
+	env, err := bootstrap.GetEnv(ctx)
 	if err != nil {
 		return
 	}
 
-	db, err := bootstrap.OpenDB(env.DBPath)
+	db, err := bootstrap.OpenDB(ctx, env.DBPath)
 	if err != nil {
 		return
 	}
@@ -47,6 +48,7 @@ func run() (err error) {
 	if err != nil {
 		return
 	}
+
 	s := grpc.NewServer(
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
@@ -57,7 +59,7 @@ func run() (err error) {
 	}
 
 	user.RegisterUserServiceServer(s, serverImpl)
-	log.Printf("server listening at %v", lis.Addr())
+	slog.InfoContext(ctx, fmt.Sprintf("server listening at %v", lis.Addr()))
 
 	srvErr := make(chan error, 1)
 	go func() {

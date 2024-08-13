@@ -73,7 +73,7 @@ services:
     ports:
       - 3100:3100
     volumes:
-      - ./volumes/loki:/loki
+      - ./volumes/loki/tmp:/tmp/loki
       - ./configs/loki/loki.yml:/etc/loki/loki.yml
     command: ["-config.file=/etc/loki/loki.yml"]
   tempo:

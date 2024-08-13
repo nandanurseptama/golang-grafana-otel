@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"os"
 	"os/signal"
@@ -31,12 +31,12 @@ func run() (err error) {
 		err = errors.Join(err, otelShutdown(context.Background()))
 	}()
 
-	env, err := bootstrap.GetEnv()
+	env, err := bootstrap.GetEnv(ctx)
 	if err != nil {
 		return
 	}
 
-	userSvcClient, err := bootstrap.UserServiceClient(env.UserServiceAddress)
+	userSvcClient, err := bootstrap.UserServiceClient(ctx, env.UserServiceAddress)
 	if err != nil {
 		return
 	}
@@ -60,8 +60,7 @@ func run() (err error) {
 	}
 
 	auth.RegisterAuthServiceServer(s, serverImpl)
-	log.Printf("server listening at %v", lis.Addr())
-
+	slog.InfoContext(ctx, fmt.Sprintf("server listening at %v", lis.Addr()))
 	srvErr := make(chan error, 1)
 	go func() {
 		srvErr <- s.Serve(lis)

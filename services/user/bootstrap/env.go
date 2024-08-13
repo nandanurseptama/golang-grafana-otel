@@ -1,6 +1,8 @@
 package bootstrap
 
 import (
+	"context"
+	"log/slog"
 	"os"
 )
 
@@ -17,8 +19,8 @@ func safeEnv(key string, defaultValue string) string {
 	return x
 }
 
-func GetEnv() (*env, error) {
-
+func GetEnv(ctx context.Context) (*env, error) {
+	slog.InfoContext(ctx, "initiate env")
 	return &env{
 		Port:   safeEnv("PORT", "8080"),
 		DBPath: safeEnv("DB_PATH", "../../volumes/services/user/sqlite.db"),
