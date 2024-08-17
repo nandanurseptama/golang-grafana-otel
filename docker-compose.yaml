@@ -29,8 +29,25 @@ services:
       - 8081:8081 # expose user service port
     environment:
       PORT: "8081"
+      USER_SERVICE_ADDRESS: "user-service:8080"
       JWT_SECRET: "B613679A0814D9EC772F95D778C35FC5FF1697C493715653C6C712144292C5AD"
       OTEL_RESOURCE_ATTRIBUTES: "service.name=auth,service.version=0.1.0"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_TRACES_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_METRICS_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_LOGS_PROTOCOL: grpc
+  frontend-service:
+    image: nandanurseptama/golang-grafana-otel/frontend-service
+    restart: always
+    build:
+      context: app
+    environment:
+      AUTH_SERCVICE_ADDRESS: "auth-service:8081"
+      OTEL_RESOURCE_ATTRIBUTES: "service.name=frontend,service.version=0.1.0"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://otel-collector:4317
