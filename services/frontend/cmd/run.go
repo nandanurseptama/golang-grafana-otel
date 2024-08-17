@@ -67,12 +67,35 @@ func doLogin(authClient auth.AuthServiceClient, meters *otel.OtelMeters) {
 		ctx := context.Background()
 		ctx, span := tracer.Start(ctx, "doLogin")
 
-		_, err := authClient.Login(ctx, &auth.LoginRequest{
+		authResult, err := authClient.Login(ctx, &auth.LoginRequest{
 			Email:    email,
 			Password: password,
 		})
 
+		doMe := func(authToken string) {
+			time.Sleep(5 * time.Second)
+			ctx := context.Background()
+			ctx, span := tracer.Start(ctx, "doMe")
+			defer span.End()
+
+			_, err := authClient.Me(ctx, &auth.MeRequest{
+				Token: authToken,
+			})
+
+			if err != nil {
+				slog.ErrorContext(ctx, "failed doMe", slog.Any("reason", err.Error()))
+				span.RecordError(err)
+				span.SetStatus(codes.Error, "failed doMe")
+				meters.FailedMeCounter.Add(ctx, 1)
+				return
+			}
+
+			slog.InfoContext(ctx, "success doMe")
+			meters.SuccessMeCounter.Add(ctx, 1)
+			span.SetStatus(codes.Ok, "success doMe")
+		}
 		if err != nil {
+			go doMe("")
 			slog.ErrorContext(ctx, "failed doLogin", slog.Any("reason", err.Error()))
 
 			span.RecordError(err)
@@ -83,6 +106,8 @@ func doLogin(authClient auth.AuthServiceClient, meters *otel.OtelMeters) {
 			time.Sleep(10 * time.Second)
 			continue
 		}
+
+		go doMe(authResult.Token)
 		slog.InfoContext(ctx, "success doLogin")
 		meters.SuccessLoginCounter.Add(ctx, 1)
 		span.SetStatus(codes.Ok, "success doLogin")
