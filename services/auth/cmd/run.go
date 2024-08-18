@@ -12,7 +12,7 @@ import (
 	"github.com/nandanurseptama/golang-grafana-otel/services/auth"
 	"github.com/nandanurseptama/golang-grafana-otel/services/auth/bootstrap"
 	"github.com/nandanurseptama/golang-grafana-otel/services/auth/internal"
-	"github.com/nandanurseptama/golang-grafana-otel/services/auth/otel"
+	"github.com/nandanurseptama/golang-grafana-otel/services/auth/pkg/otel"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 )

@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"os"
 	"time"
 
+	slogmulti "github.com/samber/slog-multi"
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -18,10 +20,32 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
+var serviceName = "github.com/nandanurseptama/golang-grafana-otel/frontend"
+var Tracer = otel.Tracer(serviceName)
+var Meter = otel.Meter(serviceName)
+
+// setup logger
+func setUpLoggger() {
+	// create logger with formatted JSON to print at os stdout
+	slogHandler := slog.NewJSONHandler(os.Stdout, nil)
+
+	// create slog handler that will send log to otel collector
+	otelSlogHandler := otelslog.NewHandler(serviceName)
+
+	// create new logger that wrap 2 handlers
+	logger := slog.New(slogmulti.Fanout(
+		slogHandler,
+		otelSlogHandler,
+	))
+
+	// set new logger as default
+	slog.SetDefault(logger)
+}
+
 // setupOTelSDK bootstraps the OpenTelemetry pipeline.
 // If it does not return an error, make sure to call shutdown for proper cleanup.
 func SetupSDK(ctx context.Context) (shutdown func(context.Context) error, err error) {
-	slog.SetDefault(otelslog.NewLogger("github.com/nandanurseptama/golang-grafana-otel/auth"))
+	setUpLoggger()
 	var shutdownFuncs []func(context.Context) error
 
 	// shutdown calls cleanup functions registered via shutdownFuncs.
