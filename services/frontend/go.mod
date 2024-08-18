@@ -42,3 +42,5 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 )
+
+replace github.com/nandanurseptama/golang-grafana-otel/services/auth => ../auth

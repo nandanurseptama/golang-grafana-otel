@@ -12,6 +12,7 @@ service AuthService{
     // create new user
     rpc Login(LoginRequest) returns(LoginResponse);
     rpc Me(MeRequest) returns(user.User);
+    rpc Register(LoginRequest) returns(LoginResponse);
 }
 
 message LoginRequest{

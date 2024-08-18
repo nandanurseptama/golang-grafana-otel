@@ -21,6 +21,18 @@ func NewServer(
 	if err != nil {
 		return nil, fmt.Errorf("failed to migrate `users` table : %s", err.Error())
 	}
+
+	// seeding user
+	db.Save(&models.UserModel{
+		Email:    "doe@gmail.com",
+		Password: "12345",
+	})
+	// seeding user
+	db.Save(&models.UserModel{
+		Email:    "john@gmail.com",
+		Password: "12345",
+	})
+
 	return &server{
 		db: db,
 	}, nil

@@ -51,6 +51,7 @@ func run() (err error) {
 	}
 	go doLogin(authSvcClient, meters)
 	go authMe(authSvcClient, meters)
+	go register(authSvcClient, meters)
 
 	<-ctx.Done()
 	stop()
@@ -173,5 +174,68 @@ func doLogin(authClient auth.AuthServiceClient, meters *otel.OtelMeters) {
 		fmt.Printf("Delay login job for %d seconds\n", delaySecond)
 		time.Sleep(time.Second * time.Duration(delaySecond))
 		fmt.Println("Delay login job end")
+	}
+}
+
+func register(authClient auth.AuthServiceClient, meters *otel.OtelMeters) {
+
+	doJob := func() {
+		registerSuccessCase := rand.IntN(2) == 1
+		email, password := func() (string, string) {
+			if !registerSuccessCase {
+				return "doe@gmail.com", "12345"
+			}
+			return faker.Email(), faker.Password()
+		}()
+
+		ctx := context.Background()
+		ctx, span := otel.Tracer.Start(ctx, "doRegister")
+
+		authResult, err := authClient.Register(ctx, &auth.LoginRequest{
+			Email:    email,
+			Password: password,
+		})
+
+		if err != nil {
+			authToken = ""
+			slog.ErrorContext(ctx, "failed doRegister", slog.Any("reason", err.Error()))
+
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "failed doRegister")
+
+			meters.FailedRegisterCounter.Add(ctx, 1)
+
+			registerSuccessCase = !registerSuccessCase
+			span.End()
+			return
+		}
+		authToken = authResult.Token
+		slog.InfoContext(ctx, "success doRegister")
+
+		meters.SuccessRegisterCounter.Add(ctx, 1)
+
+		span.SetStatus(codes.Ok, "success doRegister")
+		registerSuccessCase = !registerSuccessCase
+		span.End()
+	}
+	var mtx sync.Mutex
+	var wg sync.WaitGroup
+	for {
+		delaySecond := getDelaySeconds()
+		numRequest := getNumOfRequests()
+		fmt.Printf("Do %d register job\n", numRequest)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := 0; i < numRequest; i++ {
+				mtx.Lock()
+				doJob()
+				mtx.Unlock()
+			}
+		}()
+		wg.Wait()
+		fmt.Printf("Delay register job for %d seconds\n", delaySecond)
+		time.Sleep(time.Second * time.Duration(delaySecond))
+		fmt.Println("Delay register job end")
 	}
 }
