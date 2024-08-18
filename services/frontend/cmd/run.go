@@ -49,6 +49,11 @@ func run() (err error) {
 	if err != nil {
 		return
 	}
+
+	// sleep for 20 seconds
+	// for waiting all container services booted up
+	time.Sleep(time.Second * 20)
+
 	go doLogin(authSvcClient, meters)
 	go authMe(authSvcClient, meters)
 	go register(authSvcClient, meters)
