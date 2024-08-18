@@ -7,7 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/nandanurseptama/golang-grafana-otel/services/auth"
 	"github.com/nandanurseptama/golang-grafana-otel/services/auth/internal/models"
-	"github.com/nandanurseptama/golang-grafana-otel/services/auth/otel"
+	"github.com/nandanurseptama/golang-grafana-otel/services/auth/pkg/otel"
 	user_svc "github.com/nandanurseptama/golang-grafana-otel/services/user"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
