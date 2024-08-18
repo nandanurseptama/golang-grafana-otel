@@ -109,9 +109,12 @@ func newPropagator() propagation.TextMapPropagator {
 }
 
 func newTraceProvider(ctx context.Context) (*trace.TracerProvider, error) {
+	// create trace exporter
+	// traceExporter purpose is to send trace data
+	// to Otel Collector
 	traceExporter, err := otlptracegrpc.New(
 		ctx,
-		otlptracegrpc.WithInsecure(),
+		otlptracegrpc.WithInsecure(), // send trace data with grpc protocol
 	)
 	if err != nil {
 		return nil, err
@@ -126,9 +129,12 @@ func newTraceProvider(ctx context.Context) (*trace.TracerProvider, error) {
 }
 
 func newMeterProvider(ctx context.Context) (*metric.MeterProvider, error) {
+	// create metric exporter
+	// metricExporter purpose is to send metrics data
+	// to Otel Collector
 	metricExporter, err := otlpmetricgrpc.New(
 		ctx,
-		otlpmetricgrpc.WithInsecure(),
+		otlpmetricgrpc.WithInsecure(), // send metrics data via grpc protocol
 	)
 	if err != nil {
 		return nil, err
@@ -143,6 +149,9 @@ func newMeterProvider(ctx context.Context) (*metric.MeterProvider, error) {
 }
 
 func newLoggerProvider(ctx context.Context) (*log.LoggerProvider, error) {
+	// create logger exporter
+	// loggerExporter purpose is to send log data
+	// to Otel Collector
 	logExporter, err := otlploggrpc.New(ctx,
 		otlploggrpc.WithInsecure(),
 	)
